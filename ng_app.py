@@ -3,7 +3,6 @@ import flask
 from flask_restful import Api
 import pandas as pd
 import sqlite3
-import json
 from flask_sqlalchemy import BaseQuery, SQLAlchemy
 from flask_marshmallow import Marshmallow
 
@@ -70,11 +69,11 @@ def get_all_data():
 def get_all_data_pages(regs_per_page=20):
     page = int(flask.request.args.get('page', default=1))
     reg_ini = (page-1)*regs_per_page
-    re_fin = (page)*regs_per_page
+    reg_fin = (page)*regs_per_page
     conn = sqlite3.connect('./ng.db')
     c = conn.cursor()
     result = c.execute(
-        '''SELECT * from negotiation ''').fetchall()[reg_ini:re_fin]
+        '''SELECT * from negotiation ''').fetchall()[reg_ini:reg_fin]
     if flask.request.content_type == 'application/json':
         return jsonify(result)
     elif flask.request.content_type == 'text/html':
