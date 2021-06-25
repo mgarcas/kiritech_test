@@ -47,14 +47,14 @@ class Negotiation(db.Model):
 db.create_all()
 
 engine = db.create_engine('sqlite:///' + '.\\ng.db', {})
-ng_data = pd.read_csv('./SampleCSVFile_556kb.csv', engine='python', names=columnas)
+ng_data = pd.read_csv('./SampleCSVFile_556kb.csv',
+                      engine='python', names=columnas)
 ng_data.to_sql('negotiation', engine, if_exists='replace', index=False)
 
-
+#------ not used -------------------------
 class NegotiationSchema(ma.Schema):
     class Meta:
         campos = tuple(columnas)
-
 
 ng_schema = NegotiationSchema(many=True)
 
@@ -64,21 +64,23 @@ def get_all_data():
     ng_data = Negotiation.query.all()
     result = ng_schema.dump(ng_data)
     return jsonify(result)
-
+# ----------------------------------------
 
 @app.route('/data/', methods=['GET'])
 def get_all_data_pages(regs_per_page=20):
     page = int(flask.request.args.get('page', default=1))
-    if flask.request.content_type == 'application/json' or flask.request.content_type == None:
-        reg_ini = (page-1)*regs_per_page
-        re_fin = (page)*regs_per_page
-        conn = sqlite3.connect('./ng.db')
-        c = conn.cursor()
-        result = c.execute(
-            '''SELECT * from negotiation ''').fetchall()[reg_ini:re_fin]
+    reg_ini = (page-1)*regs_per_page
+    re_fin = (page)*regs_per_page
+    conn = sqlite3.connect('./ng.db')
+    c = conn.cursor()
+    result = c.execute(
+        '''SELECT * from negotiation ''').fetchall()[reg_ini:re_fin]
+    if flask.request.content_type == 'application/json':
+        return jsonify(result)
     elif flask.request.content_type == 'text/html':
-        return 'nothing here yet'
-    return jsonify(result)
+        return str(result)
+    elif flask.request.content_type == None:
+        return 'set "Content-Type" as application/json or text/html'
 
 
 if __name__ == '__main__':
