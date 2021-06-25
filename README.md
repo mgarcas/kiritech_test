@@ -2,4 +2,5 @@
 
 README file
 
-Endpoint at /data?page=XX
+- Run the script in the same folder the CSV file is located
+- Endpoint at /data?page=XX
