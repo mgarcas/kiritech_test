@@ -1,6 +1,6 @@
 from flask import Flask, jsonify
 import flask
-from flask_restful import Api, Resource, reqparse
+from flask_restful import Api
 import pandas as pd
 import sqlite3
 import json
