@@ -3,13 +3,14 @@ import flask
 from flask_restful import Api
 import pandas as pd
 import sqlite3
-from flask_sqlalchemy import BaseQuery, SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + '.\\ng.db'
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JSON_SORT_KEYS'] = False
 
 api = Api(app)
 db = SQLAlchemy(app)
@@ -50,10 +51,11 @@ ng_data = pd.read_csv('./SampleCSVFile_556kb.csv',
                       engine='python', names=columnas)
 ng_data.to_sql('negotiation', engine, if_exists='replace', index=False)
 
-#------ not used -------------------------
+# ------ not used -------------------------
 class NegotiationSchema(ma.Schema):
     class Meta:
         campos = tuple(columnas)
+
 
 ng_schema = NegotiationSchema(many=True)
 
@@ -65,15 +67,24 @@ def get_all_data():
     return jsonify(result)
 # ----------------------------------------
 
+
 @app.route('/data/', methods=['GET'])
 def get_all_data_pages(regs_per_page=20):
     page = int(flask.request.args.get('page', default=1))
     reg_ini = (page-1)*regs_per_page
-    reg_fin = (page)*regs_per_page
+
+    def dict_factory(cursor, row):
+        d = {}
+        for idx, col in enumerate(cursor.description):
+            d[col[0]] = row[idx]
+        return d
     conn = sqlite3.connect('./ng.db')
+    if flask.request.content_type == 'application/json':
+        conn.row_factory = dict_factory
+
     c = conn.cursor()
     result = c.execute(
-        '''SELECT * from negotiation ''').fetchall()[reg_ini:reg_fin]
+        '''SELECT * from negotiation limit ?,?''', [reg_ini, regs_per_page]).fetchall()
     if flask.request.content_type == 'application/json':
         return jsonify(result)
     elif flask.request.content_type == 'text/html':
